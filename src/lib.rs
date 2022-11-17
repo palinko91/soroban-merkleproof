@@ -31,7 +31,7 @@ impl MerkleProof {
         let mut computedhash: Bytes = leaf;
         let mut i = 0;
         while i < proof.len() {
-            computedhash = Self::hashpair(env.clone(), computedhash, proof[i]);
+            computedhash = Self::hashpair(env.clone(), computedhash, proof.get_unchecked(i).unwrap());
             i += 1;
         }
         return computedhash;
@@ -91,17 +91,22 @@ impl MerkleProof {
         let mut i = 0;
         while i < total_hash {
             let a: Bytes = if leaf_pos < leaves_len {
-                leaves[leaf_pos += 1]
+                leaf_pos += 1;
+                leaves.get_unchecked(leaf_pos).unwrap()
             } else {
-                hashes[hash_pos += 1]
+                hash_pos += 1;
+                hashes.get_unchecked(hash_pos).unwrap()
             };
 
-            let b: Bytes = if proofflags[i] == true && leaf_pos < leaves_len {
-                leaves[leaf_pos += 1]
-            } else if proofflags[i] == true && leaf_pos >= leaves_len {
-                hashes[hash_pos += 1]
+            let b: Bytes = if proofflags.get_unchecked(i).unwrap() == true && leaf_pos < leaves_len {
+                leaf_pos += 1;
+                leaves.get_unchecked(leaf_pos).unwrap()
+            } else if proofflags.get_unchecked(i).unwrap() == true && leaf_pos >= leaves_len {
+                hash_pos += 1;
+                hashes.get_unchecked(hash_pos).unwrap()
             } else {
-                proof[proof_pos += 1]
+                proof_pos += 1;
+                proof.get_unchecked(proof_pos).unwrap()
             };
 
             hashes.insert(i, Self::hashpair(env.clone(), a, b));
@@ -109,11 +114,11 @@ impl MerkleProof {
         }
 
         if total_hash > 0 {
-            return hashes[total_hash - 1];
+            return hashes.get_unchecked(total_hash - 1).unwrap();
         } else if leaves_len > 0 {
-            return leaves[0];
+            return leaves.get_unchecked(0).unwrap();
         } else {
-            return proof[0];
+            return proof.get_unchecked(0).unwrap();
         }
     }
 
