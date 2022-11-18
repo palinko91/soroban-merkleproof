@@ -1,6 +1,6 @@
 #![no_std]
-use tiny_keccak::{Hasher, Keccak};
 use soroban_sdk::{assert_with_error, contracterror, contractimpl, vec, Bytes, Env, Vec};
+use tiny_keccak::{Hasher, Keccak};
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -31,7 +31,8 @@ impl MerkleProof {
         let mut computedhash: Bytes = leaf;
         let mut i = 0;
         while i < proof.len() {
-            computedhash = Self::hashpair(env.clone(), computedhash, proof.get_unchecked(i).unwrap());
+            computedhash =
+                Self::hashpair(env.clone(), computedhash, proof.get_unchecked(i).unwrap());
             i += 1;
         }
         return computedhash;
@@ -79,7 +80,7 @@ impl MerkleProof {
 
         // The xxxPos values are "pointers" to the next value to consume in each array. All accesses are done using
         // `xxx[xxxPos++]`, which return the current value and increment the pointer, thus mimicking a queue's "pop".
-        let mut hashes: Vec<Bytes> = vec![&env, Bytes::from_slice(&env, &[total_hash as u8])]; 
+        let mut hashes: Vec<Bytes> = vec![&env, Bytes::from_slice(&env, &[total_hash as u8])];
         let mut leaf_pos: u32 = 0;
         let mut hash_pos: u32 = 0;
         let mut proof_pos: u32 = 0;
@@ -98,7 +99,8 @@ impl MerkleProof {
                 hashes.get_unchecked(hash_pos).unwrap()
             };
 
-            let b: Bytes = if proofflags.get_unchecked(i).unwrap() == true && leaf_pos < leaves_len {
+            let b: Bytes = if proofflags.get_unchecked(i).unwrap() == true && leaf_pos < leaves_len
+            {
                 leaf_pos += 1;
                 leaves.get_unchecked(leaf_pos).unwrap()
             } else if proofflags.get_unchecked(i).unwrap() == true && leaf_pos >= leaves_len {
@@ -131,17 +133,19 @@ impl MerkleProof {
 
     fn effhash(env: Env, a: Bytes, b: Bytes) -> Bytes {
         let mut k256 = Keccak::v256();
-        let mut byte_arr = [0u8;32];
-        let mut a_slice = [0u8;32];
-        let mut b_slice = [0u8;32];
+        let mut byte_arr = [0u8; 32];
+        let mut a_slice = [0u8; 32];
+        let mut b_slice = [0u8; 32];
 
         a.copy_into_slice(&mut a_slice);
         b.copy_into_slice(&mut b_slice);
         k256.update(&a_slice);
         k256.update(&b_slice);
-        
+
         k256.finalize(&mut byte_arr);
-        let mut res = Bytes::from_array(&env, &byte_arr);
+        let res = Bytes::from_array(&env, &byte_arr);
         return res;
     }
 }
+
+mod test;
