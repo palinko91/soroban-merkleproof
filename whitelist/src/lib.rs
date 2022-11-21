@@ -1,6 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, IntoVal, log};
-use soroban_auth::Identifier;
+use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, serde::Serialize};
 use tiny_keccak::{Hasher, Keccak};
 use data_encoding::BASE32_NOPAD;
 
@@ -47,7 +46,7 @@ pub fn checksum(data: &[u8]) -> [u8; 2] {
     [crc as u8, (crc >> 8) as u8]
 }
 
-fn encode(env: &Env, ver: u8, payload: &[u8]) -> Bytes {
+fn encode(env: &Env, ver: u8, payload: &[u8]) -> [u8;56] {
     let mut d = Bytes::from_array(&env, &[]);
     d.push(ver);
     d.extend_from_slice(&payload);
@@ -58,7 +57,7 @@ fn encode(env: &Env, ver: u8, payload: &[u8]) -> Bytes {
     d.copy_into_slice(&mut to_encode);
     let mut output = [0u8;56];
     BASE32_NOPAD.encode_mut(&to_encode, &mut output);
-    return Bytes::from_slice(&env, &output);
+    return output;
 }
 
 pub struct Whitelist;
@@ -73,23 +72,20 @@ impl Whitelist {
                 141, 205, 92, 207, 140, 53, 195, 182, 25, 72, 151, 50, 44, 225,
             ],
         );
+    
         let client = merkleproof::Client::new(&env, contract_id);
         let mut k256 = Keccak::v256();
-        let invoker = env.invoker();
-        let id = Identifier::from(invoker);
-        let mut ed25519: BytesN<32> = BytesN::from_array(&env, &[0u8;32]); 
-        if let Identifier::Ed25519(ed) = id {
-            ed25519 = ed;
-        }
-        let ed_b:[u8;32] = ed25519.into_val(&env);
-        let pubkey:Bytes = encode(&env, PUBLIC_KEY_ED25519, &ed_b); 
-        let mut pubkey_b = [0u8; 32];
-        pubkey.copy_into_slice(&mut pubkey_b);     
-        
-        let mut keccak_result = [0u8; 56];
-        k256.update(&pubkey_b);
+        let mut invoker_result = [0u8; 80];
+        let invoker: Bytes = env.invoker().serialize(&env);
+        invoker.copy_into_slice(&mut invoker_result);
+        let ed25519:&[u8] = &invoker_result[48..];
+        let pubkey:[u8;56] = encode(&env, PUBLIC_KEY_ED25519, &ed25519);     
+            
+        let mut keccak_result = [0u8; 32];
+        k256.update(&pubkey);
         k256.finalize(&mut keccak_result);
-        let leaf: Bytes = Bytes::from_array(&env, &keccak_result);  
+        let leaf = Bytes::from_array(&env, &keccak_result);
+        
         client.verify(&proof, &root, &leaf)
     }
 }

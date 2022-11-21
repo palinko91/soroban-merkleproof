@@ -17,9 +17,7 @@ testutils = ["soroban-sdk/testutils"]
 
 [dependencies]
 soroban-sdk = "0.2.1"
-soroban-auth = "0.2.1"
 data-encoding = { version = "2.3.2", default-features = false }
-hex = "0.4.3"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 
 [dev_dependencies]
