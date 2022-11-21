@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, IntoVal};
+use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, IntoVal, log};
 use soroban_auth::Identifier;
 use tiny_keccak::{Hasher, Keccak};
 use data_encoding::BASE32_NOPAD;
@@ -56,7 +56,7 @@ fn encode(env: &Env, ver: u8, payload: &[u8]) -> Bytes {
     d.extend_from_slice(&checksum(&check));
     let mut to_encode = [0u8; 35];
     d.copy_into_slice(&mut to_encode);
-    let mut output = [0u8;32];
+    let mut output = [0u8;56];
     BASE32_NOPAD.encode_mut(&to_encode, &mut output);
     return Bytes::from_slice(&env, &output);
 }
@@ -86,7 +86,7 @@ impl Whitelist {
         let mut pubkey_b = [0u8; 32];
         pubkey.copy_into_slice(&mut pubkey_b);     
         
-        let mut keccak_result = [0u8; 32];
+        let mut keccak_result = [0u8; 56];
         k256.update(&pubkey_b);
         k256.finalize(&mut keccak_result);
         let leaf: Bytes = Bytes::from_array(&env, &keccak_result);  
