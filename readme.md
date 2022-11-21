@@ -25,15 +25,13 @@ To see a simple example smart contract which utilizing the `soroban_merkleproof`
 
     cd whitelist
 
-    cargo test
-
 We can also build like the previous:
 
     cargo build --target wasm32-unknown-unknown --release
 
 After building can find the wasm file at:
 
-    ./target/wasm32-unknown-unknown/release/soroban_merkleproof.wasm
+    ./target/wasm32-unknown-unknown/release/whitelist.wasm
 
 ## In Soroban CLI
 After built both contracts we can deploy it. First we have to deploy the merkkleproof contract:
