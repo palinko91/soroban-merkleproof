@@ -1,14 +1,6 @@
-#![no_std]
-use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, IntoVal};
-use soroban_auth::Identifier;
-use tiny_keccak::{Hasher, Keccak};
 use data_encoding::BASE32_NOPAD;
-
-mod merkleproof {
-    soroban_sdk::contractimport!(
-        file = "./src/soroban_merkleproof.wasm"
-    );
-}
+use soroban_sdk::{contractimpl, Bytes, BytesN, Env, Vec, IntoVal};
+use std::env;
 
 pub const PUBLIC_KEY_ED25519: u8 = 6 << 3 | 0;
 
@@ -49,47 +41,29 @@ pub fn checksum(data: &[u8]) -> [u8; 2] {
 
 fn encode(env: &Env, ver: u8, payload: &[u8]) -> Bytes {
     let mut d = Bytes::from_array(&env, &[]);
+    println!("D init {:?}", &d);
     d.push(ver);
+    println!("D push ver {:?}", &d);
     d.extend_from_slice(&payload);
+    println!("D extend from sloice{:?}", &d);
     let mut check = [0u8; 33];
     d.copy_into_slice(&mut check);
+    println!("D copy into slice {:?}", &d);
     d.extend_from_slice(&checksum(&check));
+    println!("D extend from slice cheksum{:?}", &d);
     let mut to_encode = [0u8; 35];
     d.copy_into_slice(&mut to_encode);
     let mut output = [0u8;32];
+    println!("To encode {:?}", &to_encode);
     BASE32_NOPAD.encode_mut(&to_encode, &mut output);
     return Bytes::from_slice(&env, &output);
 }
 
-pub struct Whitelist;
 
-#[contractimpl]
-impl Whitelist {
-    pub fn is_wled(env: Env, contract_id: BytesN<32>, proof: Vec<Bytes>) -> bool {
-        let root: Bytes = Bytes::from_array(
-            &env,
-            &[
-                98, 133, 238, 33, 147, 27, 240, 69, 100, 156, 61, 115, 63, 226, 219, 222, 119, 242,
-                141, 205, 92, 207, 140, 53, 195, 182, 25, 72, 151, 50, 44, 225,
-            ],
-        );
-        let client = merkleproof::Client::new(&env, contract_id);
-        let mut k256 = Keccak::v256();
-        let invoker = env.invoker();
-        let id = Identifier::from(invoker);
-        let mut ed25519: BytesN<32> = BytesN::from_array(&env, &[0u8;32]); 
-        if let Identifier::Ed25519(ed) = id {
-            ed25519 = ed;
-        }
-        let ed_b:[u8;32] = ed25519.into_val(&env);
-        let pubkey:Bytes = encode(&env, PUBLIC_KEY_ED25519, &ed_b); 
-        let mut pubkey_b = [0u8; 32];
-        pubkey.copy_into_slice(&mut pubkey_b);     
-        
-        let mut keccak_result = [0u8; 32];
-        k256.update(&pubkey_b);
-        k256.finalize(&mut keccak_result);
-        let leaf: Bytes = Bytes::from_array(&env, &keccak_result);  
-        client.verify(&proof, &root, &leaf)
-    }
+fn main() {
+    let env = Env::default();
+    env::set_var("RUST_BACKTRACE", "1");
+    let ed25519 = [64, 52, 42, 32, 196, 196, 206, 205, 123, 229, 208, 80, 227, 201, 111, 82, 49, 211, 91, 112, 189, 49, 27, 71, 74, 49, 86, 165, 130, 199, 109, 0];
+    let test = encode(&env, PUBLIC_KEY_ED25519, &ed25519);
+    println!("Valami {:?}", test);
 }
