@@ -46,6 +46,7 @@ pub fn checksum(data: &[u8]) -> [u8; 2] {
     [crc as u8, (crc >> 8) as u8]
 }
 
+/// Encoding the ed25519 Public key to wallet address bytes
 fn encode(env: &Env, ver: u8, payload: &[u8]) -> [u8;56] {
     let mut d = Bytes::from_array(&env, &[]);
     d.push(ver);
@@ -65,6 +66,7 @@ pub struct Whitelist;
 #[contractimpl]
 impl Whitelist {
     pub fn is_wled(env: Env, contract_id: BytesN<32>, proof: Vec<Bytes>) -> bool {
+        // Giving the root the generator gave us in bytes
         let root: Bytes = Bytes::from_array(
             &env,
             &[
@@ -73,19 +75,26 @@ impl Whitelist {
             ],
         );
     
+        // Connection to the merkleproof contract
         let client = merkleproof::Client::new(&env, contract_id);
+        // We will need keccak later to hash the wallet address, because on merkle leafs hashed values stored
         let mut k256 = Keccak::v256();
+        // The variable where we going to save the invoker serialization, it returning AccountId in bytes
         let mut invoker_result = [0u8; 80];
         let invoker: Bytes = env.invoker().serialize(&env);
         invoker.copy_into_slice(&mut invoker_result);
+        // Slicing out the ed25519 to get he public key
         let ed25519:&[u8] = &invoker_result[48..];
+        // Encoding into the GBA.... wallet address format in bytes
         let pubkey:[u8;56] = encode(&env, PUBLIC_KEY_ED25519, &ed25519);     
-            
+        
+        // Hashing the wallet address with keccak256 to get the leaf
         let mut keccak_result = [0u8; 32];
         k256.update(&pubkey);
         k256.finalize(&mut keccak_result);
         let leaf = Bytes::from_array(&env, &keccak_result);
         
+        // Verifying with merkleproof contract that the caller of is_wled is whitelisted true, or not false
         client.verify(&proof, &root, &leaf)
     }
 }
