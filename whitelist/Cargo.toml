@@ -1,14 +1,14 @@
 [package]
-name = "soroban_merkleproof"
+name = "whitelist"
 version = "0.1.0"
 authors = ["palinko <arpad.palinkas@gmail.com>"]
-description = "openzeppelin-contracts/MerkleProof.sol Soroban implementation"
+description = "Simple example of making a whitelist with the MerkleProof"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "soroban_merkleproof"
+name = "whitelist"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 
@@ -17,11 +17,14 @@ testutils = ["soroban-sdk/testutils"]
 
 [dependencies]
 soroban-sdk = "0.2.1"
+soroban-auth = "0.2.1"
+data-encoding = { version = "2.3.2", default-features = false }
 hex = "0.4.3"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 
 [dev_dependencies]
 soroban-sdk = { version = "0.2.1", features = ["testutils"] }
+soroban-auth = { version = "0.2.1", features = ["testutils"] }
 
 [profile.release]
 opt-level = "z"
